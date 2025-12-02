@@ -23,7 +23,7 @@
     // Module Behavior
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
-    "moduleDetection": "automatic",
+    "moduleDetection": "auto",
 
     // Stability / Safety
     "skipLibCheck": true,
