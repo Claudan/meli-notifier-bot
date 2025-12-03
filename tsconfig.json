@@ -30,6 +30,6 @@
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["infra/**/*.ts", "src/**/*.ts"],
+  "include": ["infra/**/*.ts", "src/**/*.ts", "shared/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
