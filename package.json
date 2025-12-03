@@ -30,6 +30,7 @@
     "@commitlint/cli": "^20.1.0",
     "@commitlint/config-conventional": "^20.0.0",
     "@eslint/js": "^9.39.1",
+    "@types/aws-lambda": "^8.10.159",
     "@types/node": "^24.10.1",
     "@typescript-eslint/eslint-plugin": "^8.48.1",
     "@typescript-eslint/parser": "^8.48.1",
@@ -51,6 +52,7 @@
     "typescript-eslint": "^8.48.1"
   },
   "dependencies": {
+    "@aws-sdk/client-sqs": "^3.943.0",
     "aws-cdk-lib": "^2.231.0",
     "constructs": "^10.4.3"
   }
