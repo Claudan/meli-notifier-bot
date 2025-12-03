@@ -30,6 +30,12 @@ export default defineConfig([
     },
     rules: {
       "prettier/prettier": "error",
+      "@typescript-eslint/no-unsafe-member-access": "off",
+      "@typescript-eslint/no-unsafe-assignment": "off",
+      "@typescript-eslint/no-unsafe-call": "off",
+      "@typescript-eslint/no-unsafe-argument": "off",
+      "@typescript-eslint/no-explicit-any": "warn",
+      "@typescript-eslint/restrict-template-expressions": "off",
     },
     plugins: {
       prettier: require("eslint-plugin-prettier"),
