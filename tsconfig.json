@@ -1,8 +1,8 @@
 {
   "compilerOptions": {
     // File Layout
-    "rootDir": "./src",
-    "outDir": "./dist",
+    "rootDir": ".",
+    "outDir": "dist",
 
     // Environment Settings
     "module": "nodenext",
@@ -24,11 +24,12 @@
     "verbatimModuleSyntax": true,
     "isolatedModules": true,
     "moduleDetection": "auto",
+    "moduleResolution": "nodenext",
 
     // Stability / Safety
     "skipLibCheck": true,
     "forceConsistentCasingInFileNames": true
   },
-  "include": ["src"],
+  "include": ["infra/**/*.ts", "src/**/*.ts"],
   "exclude": ["node_modules", "dist"]
 }
