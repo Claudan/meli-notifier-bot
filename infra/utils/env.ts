@@ -1,6 +1,13 @@
-import { requireEnv } from "../../shared/env-utils.js";
+import type * as cdk from "aws-cdk-lib";
 
-export const CDK_ENV = {
-  ACCOUNT: requireEnv("CDK_DEFAULT_ACCOUNT"),
-  REGION: requireEnv("CDK_DEFAULT_REGION"),
-};
+export function resolveCdkEnv(): cdk.Environment {
+  const account = process.env.CDK_DEFAULT_ACCOUNT;
+  const region = process.env.CDK_DEFAULT_REGION;
+
+  const env: cdk.Environment = {
+    ...(account ? { account } : {}),
+    ...(region ? { region } : {}),
+  };
+
+  return env;
+}
