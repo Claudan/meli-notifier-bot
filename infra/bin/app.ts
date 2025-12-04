@@ -1,16 +1,11 @@
 #!/usr/bin/env node
-import "source-map-support/register";
+import "source-map-support/register.js";
 import * as cdk from "aws-cdk-lib";
 import { MainStack } from "../lib/main-stack.js";
-import { CDK_ENV } from "../utils/env.js";
-
-const { ACCOUNT, REGION } = CDK_ENV;
+import { resolveCdkEnv } from "../utils/env.js";
 
 const app = new cdk.App();
 
-const env = {
-  account: ACCOUNT,
-  region: REGION,
-};
+const env = resolveCdkEnv();
 
 new MainStack(app, "MeliNotifierBotStack", { env });
