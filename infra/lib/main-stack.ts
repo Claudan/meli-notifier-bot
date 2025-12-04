@@ -19,7 +19,7 @@ export class MainStack extends cdk.Stack {
 
     const producerLambda = new lambdaNode.NodejsFunction(this, "WebhookProducerLambda", {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, "../../functions/producer/handler.ts"),
+      entry: path.join(process.cwd(), "src/functions/producer/handler.ts"),
       handler: "handler",
       timeout: Duration.seconds(10),
       memorySize: 256,
@@ -36,7 +36,7 @@ export class MainStack extends cdk.Stack {
 
     const workerLambda = new lambdaNode.NodejsFunction(this, "WorkerLambda", {
       runtime: lambda.Runtime.NODEJS_20_X,
-      entry: path.join(__dirname, "../../functions/worker/handler.ts"),
+      entry: path.join(process.cwd(), "src/functions/worker/handler.ts"),
       handler: "handler",
       timeout: Duration.seconds(30),
       memorySize: 512,
