@@ -1,45 +1,42 @@
 import { SecretsManagerClient, GetSecretValueCommand } from "@aws-sdk/client-secrets-manager";
 
-const client = new SecretsManagerClient({});
+export const createTelegramClient = (secretArn: string) => {
+  const secrets = new SecretsManagerClient({});
 
-export const getTelegramCredentials = async () => {
-  const secretArn = process.env.TELEGRAM_SECRET_ARN;
-  if (!secretArn) throw new Error("TELEGRAM_SECRET_ARN not set");
+  const getCredentials = async () => {
+    const res = await secrets.send(new GetSecretValueCommand({ SecretId: secretArn }));
 
-  const res = await client.send(new GetSecretValueCommand({ SecretId: secretArn }));
+    if (!res.SecretString) throw new Error("Telegram secret is empty");
 
-  if (!res.SecretString) throw new Error("SecretString is empty");
-
-  const parsed = JSON.parse(res.SecretString);
-
-  return {
-    botToken: parsed.telegramBotToken as string,
-    chatId: parsed.telegramChatId as string,
-  };
-};
-
-export const sendTelegramMessage = async (message: string) => {
-  const { botToken, chatId } = await getTelegramCredentials();
-
-  const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
-
-  const body = {
-    chat_id: chatId,
-    text: message,
-    parse_mode: "Markdown",
+    const parsed = JSON.parse(res.SecretString);
+    return {
+      botToken: parsed.telegramBotToken as string,
+      chatId: parsed.telegramChatId as string,
+    };
   };
 
-  const response = await fetch(url, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify(body),
-  });
+  const sendMessage = async (message: string) => {
+    const { botToken, chatId } = await getCredentials();
 
-  if (!response.ok) {
-    const err = await response.text();
-    console.error("Telegram API error:", err);
-    throw new Error(`Failed to send Telegram message: ${response.statusText}`);
-  }
+    const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
 
-  return true;
+    const response = await fetch(url, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: message,
+        parse_mode: "Markdown",
+      }),
+    });
+
+    if (!response.ok) {
+      const err = await response.text();
+      throw new Error(`Telegram API error: ${err}`);
+    }
+
+    return true;
+  };
+
+  return { sendMessage };
 };
