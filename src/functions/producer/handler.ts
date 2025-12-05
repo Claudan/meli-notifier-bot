@@ -1,8 +1,8 @@
 import { SQSClient, SendMessageCommand } from "@aws-sdk/client-sqs";
 import type { APIGatewayProxyEvent, APIGatewayProxyResult } from "aws-lambda";
-import { ENV } from "../../utils/env.js";
+import { PRODUCER_ENV } from "./env.js";
 
-const { QUEUE_URL, REGION } = ENV;
+const { QUEUE_URL, REGION } = PRODUCER_ENV;
 
 const sqs = new SQSClient({ region: REGION });
 
