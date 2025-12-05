@@ -8,6 +8,7 @@ import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import * as path from "node:path";
 import { Duration } from "aws-cdk-lib";
 import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
+import * as dynamodb from "aws-cdk-lib/aws-dynamodb";
 
 export class MainStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -16,6 +17,13 @@ export class MainStack extends cdk.Stack {
     const queue = new sqs.Queue(this, "MeliEventsQueue", {
       visibilityTimeout: Duration.seconds(60),
       retentionPeriod: Duration.days(4),
+    });
+
+    const eventsTable = new dynamodb.Table(this, "MeliEventsTable", {
+      tableName: "meli-notifier-events",
+      partitionKey: { name: "eventId", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
     const producerLambda = new lambdaNode.NodejsFunction(this, "WebhookProducerLambda", {
@@ -53,8 +61,10 @@ export class MainStack extends cdk.Stack {
       },
     });
 
+    eventsTable.grantReadWriteData(workerLambda);
     telegramSecret.grantRead(workerLambda);
     workerLambda.addEnvironment("TELEGRAM_SECRET_ARN", telegramSecret.secretArn);
+    workerLambda.addEnvironment("DYNAMO_TABLE", eventsTable.tableName);
 
     workerLambda.addEventSource(
       new SqsEventSource(queue, {
