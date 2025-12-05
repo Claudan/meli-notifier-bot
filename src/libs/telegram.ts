@@ -23,6 +23,10 @@ export const sendTelegramMessage = async (message: string) => {
 
   const url = `https://api.telegram.org/bot${botToken}/sendMessage`;
 
+  console.log("Telegram URL:", url);
+  console.log("botToken length:", botToken.length);
+  console.log("chatId:", chatId);
+
   const body = {
     chat_id: chatId,
     text: message,
