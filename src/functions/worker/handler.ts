@@ -1,4 +1,5 @@
 import type { SQSHandler, SQSRecord } from "aws-lambda";
+import { sendTelegramMessage } from "../../libs/telegram.js";
 
 type QueuePayload = Record<string, unknown>;
 
@@ -17,7 +18,7 @@ const parseRecordBody = (record: SQSRecord): QueuePayload => {
   }
 };
 
-export const handler: SQSHandler = (event) => {
+export const handler: SQSHandler = async (event) => {
   // Cloudwatch logs
   console.log(`Worker received ${event.Records.length} records`);
   for (const record of event.Records) {
@@ -25,6 +26,9 @@ export const handler: SQSHandler = (event) => {
       const payload = parseRecordBody(record);
       // TO-DO: implement meli and telegram logic
       console.log({ payload });
+      // TO-DO: formatMessage()
+      const message = `MercadoLibre Event:\n\`\`\`${JSON.stringify(payload, null, 2)}\`\`\``;
+      await sendTelegramMessage(message);
     } catch (error: unknown) {
       console.error("Worker failed to process message:", error);
       throw error;
