@@ -1,10 +1,15 @@
 import type { SQSHandler, SQSRecord } from "aws-lambda";
-import { sendTelegramMessage } from "../../infrastructure/telegram/telegram-client.js";
-import { saveEventIfNotExists } from "../../infrastructure/dynamo/events-repository.js";
-import { ENV } from "../../utils/env.js";
+import { createTelegramClient } from "../../infrastructure/telegram/telegram-client.js";
+import { createDynamoClient } from "../../infrastructure/dynamo/dynamo-client.js";
+import { createEventsRepository } from "../../infrastructure/dynamo/events-repository.js";
 import type { GetEventIdParams, QueuePayload } from "../../application/types.js";
+import { WORKER_ENV } from "./env.js";
 
-const { DYNAMO_TABLE } = ENV;
+const { DYNAMO_TABLE, REGION, TELEGRAM_SECRET_ARN } = WORKER_ENV;
+
+const dynamoClient = createDynamoClient(REGION);
+const eventsRepository = createEventsRepository(dynamoClient);
+const telegram = createTelegramClient(TELEGRAM_SECRET_ARN);
 
 const parseRecordBody = (record: SQSRecord): QueuePayload => {
   const { body } = record;
@@ -35,14 +40,18 @@ export const handler: SQSHandler = async (event) => {
       const payload = parseRecordBody(record);
       console.log({ payload });
       const eventId = getEventId({ payload, record });
-      const saved = await saveEventIfNotExists({ tableName: DYNAMO_TABLE, eventId, payload });
+      const saved = await eventsRepository.saveEventIfNotExists({
+        tableName: DYNAMO_TABLE,
+        eventId,
+        payload,
+      });
       if (!saved) {
         console.log("Skipping duplicate event:", eventId);
         continue;
       }
       // TO-DO: formatMessage()
       const message = `MercadoLibre Event:\n\`\`\`${JSON.stringify(payload, null, 2)}\`\`\``;
-      await sendTelegramMessage(message);
+      await telegram.sendMessage(message);
     } catch (error: unknown) {
       console.error("Worker failed to process message:", error);
       throw error;
