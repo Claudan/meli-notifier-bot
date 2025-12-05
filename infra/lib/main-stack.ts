@@ -7,6 +7,7 @@ import * as sqs from "aws-cdk-lib/aws-sqs";
 import { SqsEventSource } from "aws-cdk-lib/aws-lambda-event-sources";
 import * as path from "node:path";
 import { Duration } from "aws-cdk-lib";
+import * as secretsmanager from "aws-cdk-lib/aws-secretsmanager";
 
 export class MainStack extends cdk.Stack {
   constructor(scope: Construct, id: string, props?: cdk.StackProps) {
@@ -34,6 +35,12 @@ export class MainStack extends cdk.Stack {
 
     queue.grantSendMessages(producerLambda);
 
+    const telegramSecret = new secretsmanager.Secret(this, "TelegramSecret", {
+      secretName: "/meli-notifier/telegram",
+      description: "Credentials for Telegram notifications",
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
     const workerLambda = new lambdaNode.NodejsFunction(this, "WorkerLambda", {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(process.cwd(), "src/functions/worker/handler.ts"),
@@ -45,6 +52,9 @@ export class MainStack extends cdk.Stack {
         target: "es2022",
       },
     });
+
+    telegramSecret.grantRead(workerLambda);
+    workerLambda.addEnvironment("TELEGRAM_SECRET_ARN", telegramSecret.secretArn);
 
     workerLambda.addEventSource(
       new SqsEventSource(queue, {
@@ -71,6 +81,10 @@ export class MainStack extends cdk.Stack {
     new cdk.CfnOutput(this, "QueueUrl", {
       value: queue.queueUrl,
       description: "URL of the SQS queue used by the worker",
+    });
+
+    new cdk.CfnOutput(this, "TelegramSecretArn", {
+      value: telegramSecret.secretArn,
     });
   }
 }
