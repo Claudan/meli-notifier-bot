@@ -49,6 +49,12 @@ export class MainStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
 
+    const meliAuthSecret = new secretsmanager.Secret(this, "MercadoLibreAuthSecret", {
+      secretName: "/meli-metrics/mercadolibre/auth",
+      description: "MercadoLibre OAuth static credentials",
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
     const workerLambda = new lambdaNode.NodejsFunction(this, "WorkerLambda", {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(process.cwd(), "src/functions/worker/handler.ts"),
@@ -63,7 +69,9 @@ export class MainStack extends cdk.Stack {
 
     eventsTable.grantReadWriteData(workerLambda);
     telegramSecret.grantRead(workerLambda);
+    meliAuthSecret.grantRead(workerLambda);
     workerLambda.addEnvironment("TELEGRAM_SECRET_ARN", telegramSecret.secretArn);
+    workerLambda.addEnvironment("MELI_AUTH_SECRET_ARN", meliAuthSecret.secretArn);
     workerLambda.addEnvironment("DYNAMO_TABLE", eventsTable.tableName);
 
     workerLambda.addEventSource(
