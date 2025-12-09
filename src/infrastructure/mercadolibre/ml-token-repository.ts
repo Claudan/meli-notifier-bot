@@ -10,20 +10,20 @@ export interface MLTokenRepository {
 interface CreateMLTokenRepositoryParams {
   client: DynamoDBDocumentClient;
   tableName: string;
-  tokenId: string;
+  tokenKey: string;
 }
 
 export const createMLTokenRepository = ({
   client,
   tableName,
-  tokenId,
+  tokenKey,
 }: CreateMLTokenRepositoryParams): MLTokenRepository => {
   return {
     async get() {
       const result = await client.send(
         new GetCommand({
           TableName: tableName,
-          Key: { id: tokenId },
+          Key: { key: tokenKey },
         }),
       );
 
@@ -41,7 +41,7 @@ export const createMLTokenRepository = ({
         new PutCommand({
           TableName: tableName,
           Item: {
-            id: tokenId,
+            key: tokenKey,
             ...token,
           },
         }),

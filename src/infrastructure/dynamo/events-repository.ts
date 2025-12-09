@@ -1,14 +1,20 @@
 import { GetCommand, PutCommand } from "@aws-sdk/lib-dynamodb";
 import type { DynamoDBDocumentClient } from "@aws-sdk/lib-dynamodb";
-import type { SaveEventIfNotExistsParams } from "./types.js";
 
-export const createEventsRepository = (docClient: DynamoDBDocumentClient) => {
+interface CreateEventsRepositoryParams {
+  client: DynamoDBDocumentClient;
+  tableName: string;
+}
+
+export const createEventsRepository = ({ client, tableName }: CreateEventsRepositoryParams) => {
   const saveEventIfNotExists = async ({
-    tableName,
     eventId,
     payload,
-  }: SaveEventIfNotExistsParams) => {
-    const existing = await docClient.send(
+  }: {
+    eventId: string;
+    payload: unknown;
+  }): Promise<boolean> => {
+    const existing = await client.send(
       new GetCommand({
         TableName: tableName,
         Key: { eventId },
@@ -17,7 +23,7 @@ export const createEventsRepository = (docClient: DynamoDBDocumentClient) => {
 
     if (existing.Item) return false;
 
-    await docClient.send(
+    await client.send(
       new PutCommand({
         TableName: tableName,
         Item: {
@@ -32,7 +38,7 @@ export const createEventsRepository = (docClient: DynamoDBDocumentClient) => {
     return true;
   };
 
-  return {
-    saveEventIfNotExists,
-  };
+  return { saveEventIfNotExists };
 };
+
+export type EventsRepository = ReturnType<typeof createEventsRepository>;

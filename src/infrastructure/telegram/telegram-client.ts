@@ -40,3 +40,5 @@ export const createTelegramClient = (secretArn: string) => {
 
   return { sendMessage };
 };
+
+export type TelegramClient = ReturnType<typeof createTelegramClient>;

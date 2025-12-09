@@ -26,6 +26,13 @@ export class MainStack extends cdk.Stack {
       removalPolicy: cdk.RemovalPolicy.DESTROY,
     });
 
+    const meliTokensTable = new dynamodb.Table(this, "MeliTokensTable", {
+      tableName: "meli-auth-tokens",
+      partitionKey: { name: "key", type: dynamodb.AttributeType.STRING },
+      billingMode: dynamodb.BillingMode.PAY_PER_REQUEST,
+      removalPolicy: cdk.RemovalPolicy.RETAIN,
+    });
+
     const producerLambda = new lambdaNode.NodejsFunction(this, "WebhookProducerLambda", {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(process.cwd(), "src/functions/producer/handler.ts"),
@@ -68,11 +75,13 @@ export class MainStack extends cdk.Stack {
     });
 
     eventsTable.grantReadWriteData(workerLambda);
+    meliTokensTable.grantReadWriteData(workerLambda);
     telegramSecret.grantRead(workerLambda);
     meliAuthSecret.grantRead(workerLambda);
     workerLambda.addEnvironment("TELEGRAM_SECRET_ARN", telegramSecret.secretArn);
     workerLambda.addEnvironment("MELI_AUTH_SECRET_ARN", meliAuthSecret.secretArn);
-    workerLambda.addEnvironment("DYNAMO_TABLE", eventsTable.tableName);
+    workerLambda.addEnvironment("EVENTS_TABLE_NAME", eventsTable.tableName);
+    workerLambda.addEnvironment("MELI_TOKENS_TABLE_NAME", meliTokensTable.tableName);
 
     workerLambda.addEventSource(
       new SqsEventSource(queue, {

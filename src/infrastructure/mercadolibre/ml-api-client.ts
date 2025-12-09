@@ -23,3 +23,5 @@ export const createMLApiClient = ({ getAccessToken }: CreateMLApiClientParams) =
     },
   };
 };
+
+export type MLApiClient = ReturnType<typeof createMLApiClient>;
