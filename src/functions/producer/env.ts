@@ -1,4 +1,4 @@
-import { requireEnv } from "../../../shared/env-utils.js";
+import { requireEnv } from "../utils/env-utils.js";
 
 export const PRODUCER_ENV = {
   QUEUE_URL: requireEnv("QUEUE_URL"),
