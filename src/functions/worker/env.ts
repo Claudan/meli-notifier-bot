@@ -1,4 +1,4 @@
-import { requireEnv } from "../../../shared/env-utils.js";
+import { requireEnv } from "../utils/env-utils.js";
 
 export const WORKER_ENV = {
   EVENTS_TABLE_NAME: requireEnv("EVENTS_TABLE_NAME"),
