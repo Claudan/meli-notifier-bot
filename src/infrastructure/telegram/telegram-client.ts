@@ -38,7 +38,31 @@ export const createTelegramClient = (secretArn: string) => {
     return true;
   };
 
-  return { sendMessage };
+  const sendDocument = async (params: { buffer: Buffer; filename: string; caption?: string }) => {
+    const { botToken, chatId } = await getCredentials();
+
+    const url = `https://api.telegram.org/bot${botToken}/sendDocument`;
+
+    const form = new FormData();
+    form.set("chat_id", chatId);
+    form.set("document", new Blob([params.buffer]), params.filename);
+
+    if (params.caption) {
+      form.set("caption", params.caption);
+      form.set("parse_mode", "Markdown");
+    }
+
+    const res = await fetch(url, {
+      method: "POST",
+      body: form as any,
+    });
+
+    if (!res.ok) {
+      throw new Error(`Telegram sendDocument error: ${await res.text()}`);
+    }
+  };
+
+  return { sendDocument, sendMessage };
 };
 
 export type TelegramClient = ReturnType<typeof createTelegramClient>;
