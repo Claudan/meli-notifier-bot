@@ -1,0 +1,46 @@
+import type { QueuePayload } from "../types.js";
+
+export interface MercadoLibreToken {
+  accessToken: string;
+  refreshToken: string;
+  expiresAt: number;
+}
+
+export interface MercadoLibreTokenResponse {
+  access_token: string;
+  refresh_token: string;
+  expires_in: number;
+}
+
+export const isTokenExpired = (token: MercadoLibreToken): boolean => {
+  return Date.now() >= token.expiresAt - 60_000;
+};
+
+export interface MercadoLibreOrderWebhookPayload extends QueuePayload {
+  _id: string;
+  topic: string;
+  resource: string;
+  user_id: number;
+  application_id: number;
+  sent: string;
+  attempts: number;
+  received: string;
+  actions: unknown[];
+}
+
+export const isMercadoLibreTokenResponse = (data: unknown): data is MercadoLibreTokenResponse => {
+  if (!data || typeof data !== "object") return false;
+  const candidate = data as Record<string, unknown>;
+  return (
+    typeof candidate.access_token === "string" &&
+    typeof candidate.refresh_token === "string" &&
+    typeof candidate.expires_in === "number"
+  );
+};
+
+export const getOrderIdFromPayload = (payload: QueuePayload): string | null => {
+  const { resource } = payload as { resource?: unknown };
+  if (typeof resource !== "string") return null;
+  const match = /\/orders\/(\d+)/.exec(resource);
+  return match?.[1] ?? null;
+};
