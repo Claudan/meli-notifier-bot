@@ -1,7 +1,11 @@
 import type { SQSHandler, SQSRecord } from "aws-lambda";
 import { createWorkerContext } from "./context.js";
 import type { GetEventIdParams, QueuePayload } from "../../application/types.js";
-import { getOrderIdFromPayload } from "../../application/mercadolibre/types.js";
+import {
+  getOrderIdFromPayload,
+  isMercadoLibreOrder,
+  type MercadoLibreOrder,
+} from "../../application/mercadolibre/types.js";
 
 const parseRecordBody = (record: SQSRecord): QueuePayload => {
   if (!record.body) return {};
@@ -49,7 +53,24 @@ export const handler: SQSHandler = async (event) => {
         continue;
       }
 
-      const order = await ctx.mlApiClient.getOrder(orderId);
+      const rawOrder = await ctx.mlApiClient.getOrder(orderId);
+
+      if (!isMercadoLibreOrder(rawOrder)) {
+        console.error("Invalid MercadoLibre order response", rawOrder);
+        continue;
+      }
+
+      const order: MercadoLibreOrder = rawOrder;
+
+      if (order.shipping?.status === "ready_to_ship") {
+        const pdf = await ctx.mlApiClient.downloadShippingLabel(order.shipping.id);
+
+        await ctx.telegram.sendDocument({
+          filename: `label-${orderId}.pdf`,
+          buffer: pdf,
+          caption: `Etiqueta lista para envío`,
+        });
+      }
 
       await ctx.telegram.sendMessage(
         [
