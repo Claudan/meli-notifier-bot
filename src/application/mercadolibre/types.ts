@@ -12,9 +12,14 @@ export interface MercadoLibreTokenResponse {
   expires_in: number;
 }
 
-export const isTokenExpired = (token: MercadoLibreToken): boolean => {
-  return Date.now() >= token.expiresAt - 60_000;
-};
+export interface MercadoLibreOrder {
+  id: number;
+  status: string;
+  shipping?: {
+    id: number;
+    status: string;
+  };
+}
 
 export interface MercadoLibreOrderWebhookPayload extends QueuePayload {
   _id: string;
@@ -27,6 +32,10 @@ export interface MercadoLibreOrderWebhookPayload extends QueuePayload {
   received: string;
   actions: unknown[];
 }
+
+export const isTokenExpired = (token: MercadoLibreToken): boolean => {
+  return Date.now() >= token.expiresAt - 60_000;
+};
 
 export const isMercadoLibreTokenResponse = (data: unknown): data is MercadoLibreTokenResponse => {
   if (!data || typeof data !== "object") return false;
@@ -43,4 +52,26 @@ export const getOrderIdFromPayload = (payload: QueuePayload): string | null => {
   if (typeof resource !== "string") return null;
   const match = /\/orders\/(\d+)/.exec(resource);
   return match?.[1] ?? null;
+};
+
+export const isMercadoLibreOrder = (value: unknown): value is MercadoLibreOrder => {
+  if (!value || typeof value !== "object") return false;
+
+  const candidate = value as Record<string, unknown>;
+
+  if (typeof candidate.id !== "number") return false;
+  if (typeof candidate.status !== "string") return false;
+
+  if (candidate.shipping !== undefined) {
+    if (typeof candidate.shipping !== "object" || candidate.shipping === null) {
+      return false;
+    }
+
+    const shipping = candidate.shipping as Record<string, unknown>;
+
+    if (typeof shipping.id !== "number") return false;
+    if (typeof shipping.status !== "string") return false;
+  }
+
+  return true;
 };
