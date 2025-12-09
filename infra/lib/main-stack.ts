@@ -57,7 +57,7 @@ export class MainStack extends cdk.Stack {
     });
 
     const meliAuthSecret = new secretsmanager.Secret(this, "MercadoLibreAuthSecret", {
-      secretName: "/meli-metrics/mercadolibre/auth",
+      secretName: "/meli-notifier/mercadolibre/auth",
       description: "MercadoLibre OAuth static credentials",
       removalPolicy: cdk.RemovalPolicy.RETAIN,
     });
