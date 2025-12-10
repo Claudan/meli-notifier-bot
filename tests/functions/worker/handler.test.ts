@@ -1,24 +1,42 @@
 import type { Callback, Context, SQSEvent } from "aws-lambda";
 import { describe, expect, it, vi, afterEach } from "vitest";
 
-const { saveEventIfNotExists, sendMessage, sendDocument, getOrder, downloadShippingLabel } =
-  vi.hoisted(() => ({
-    saveEventIfNotExists: vi.fn().mockResolvedValue(true),
-    sendMessage: vi.fn().mockResolvedValue(undefined),
-    sendDocument: vi.fn().mockResolvedValue(undefined),
-    getOrder: vi.fn().mockResolvedValue({
-      id: 2000014183891392,
-      status: "paid",
-      shipping: { id: 555, status: "ready_to_ship" },
-    }),
-    downloadShippingLabel: vi.fn().mockResolvedValue(Buffer.from("pdf")),
-  }));
+const {
+  saveEventIfNotExists,
+  sendMessage,
+  sendDocument,
+  getOrder,
+  downloadShippingLabel,
+  getShipment,
+} = vi.hoisted(() => ({
+  saveEventIfNotExists: vi.fn().mockResolvedValue(true),
+  sendMessage: vi.fn().mockResolvedValue(undefined),
+  sendDocument: vi.fn().mockResolvedValue(undefined),
+  getOrder: vi.fn().mockResolvedValue({
+    id: 2000014183891392,
+    status: "paid",
+    shipping: { id: 555 },
+    buyer: { first_name: "John", last_name: "Doe", nickname: "jdoe" },
+  }),
+  downloadShippingLabel: vi.fn().mockResolvedValue(Buffer.from("pdf")),
+  getShipment: vi.fn().mockResolvedValue({
+    id: 555,
+    status: "ready_to_ship",
+    shipping_items: [{ quantity: 1, description: "Product" }],
+    receiver_address: {
+      receiver_name: "John Doe",
+      address_line: "Street 123",
+      city: { name: "City" },
+      state: { name: "State" },
+    },
+  }),
+}));
 
 vi.mock("../../../src/functions/worker/context.js", () => ({
   createWorkerContext: vi.fn().mockResolvedValue({
     eventsRepository: { saveEventIfNotExists },
     telegram: { sendMessage, sendDocument },
-    mlApiClient: { getOrder, downloadShippingLabel },
+    mlApiClient: { getOrder, downloadShippingLabel, getShipment },
   }),
 }));
 
