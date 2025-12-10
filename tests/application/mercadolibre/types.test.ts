@@ -3,6 +3,7 @@ import {
   getOrderIdFromPayload,
   isMercadoLibreOrder,
   isMercadoLibreTokenResponse,
+  isMercadoLibreShipment,
   isTokenExpired,
   mapMLOrderToOrderDTO,
   type MercadoLibreOrderWebhookPayload,
@@ -48,7 +49,6 @@ describe("isMercadoLibreOrder", () => {
         status: "paid",
         shipping: {
           id: 999,
-          status: "ready_to_ship",
         },
       }),
     ).toBe(true);
@@ -68,7 +68,6 @@ describe("isMercadoLibreOrder", () => {
         status: "paid",
         shipping: {
           id: "bad",
-          status: "ready_to_ship",
         },
       }),
     ).toBe(false);
@@ -85,14 +84,42 @@ describe("mapMLOrderToOrderDTO", () => {
     const dto = mapMLOrderToOrderDTO({
       id: 11,
       status: "ready_to_ship",
-      shipping: { id: 99, status: "ready_to_ship" },
+      shipping: { id: 99 },
     });
     expect(dto).toEqual({
       id: 11,
       status: "ready_to_ship",
       shippingId: 99,
-      shippingStatus: "ready_to_ship",
     });
+  });
+});
+
+describe("isMercadoLibreShipment", () => {
+  it("accepts valid shipment", () => {
+    expect(
+      isMercadoLibreShipment({
+        id: 1,
+        status: "ready_to_ship",
+        shipping_items: [{ quantity: 1, description: "item" }],
+        receiver_address: {
+          address_line: "Street 123",
+          receiver_name: "John Doe",
+          city: { name: "City" },
+          state: { name: "State" },
+        },
+      }),
+    ).toBe(true);
+  });
+
+  it("rejects invalid shipment", () => {
+    expect(
+      isMercadoLibreShipment({
+        id: "1",
+        status: "ready_to_ship",
+        shipping_items: [],
+        receiver_address: {},
+      }),
+    ).toBe(false);
   });
 });
 
