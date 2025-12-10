@@ -15,9 +15,44 @@ export interface MercadoLibreTokenResponse {
 export interface MercadoLibreOrder {
   id: number;
   status: string;
+  total_amount?: number;
   shipping?: {
     id: number;
-    status: string;
+  };
+  order_items?: Array<{
+    quantity: number;
+    item: {
+      id: string;
+      title: string;
+      variation_attributes?: Array<{
+        name: string;
+        value_name: string;
+      }>;
+    };
+  }>;
+  buyer?: {
+    nickname?: string;
+    first_name?: string;
+    last_name?: string;
+  };
+}
+
+export interface MercadoLibreShipment {
+  id: number;
+  status: string;
+  shipping_items: Array<{
+    quantity: number;
+    description: string;
+  }>;
+  receiver_address: {
+    address_line: string;
+    receiver_name: string;
+    city: {
+      name: string;
+    };
+    state: {
+      name: string;
+    };
   };
 }
 
@@ -37,9 +72,7 @@ export interface OrderDTO {
   id: number;
   status: string;
   shippingId?: number;
-  shippingStatus?: string;
 }
-
 export const isTokenExpired = (token: MercadoLibreToken): boolean => {
   return Date.now() >= token.expiresAt - 60_000;
 };
@@ -77,8 +110,21 @@ export const isMercadoLibreOrder = (value: unknown): value is MercadoLibreOrder 
     const shipping = candidate.shipping as Record<string, unknown>;
 
     if (typeof shipping.id !== "number") return false;
-    if (typeof shipping.status !== "string") return false;
   }
+
+  return true;
+};
+
+export const isMercadoLibreShipment = (value: unknown): value is MercadoLibreShipment => {
+  if (!value || typeof value !== "object") return false;
+
+  const c = value as Record<string, unknown>;
+
+  if (typeof c.id !== "number") return false;
+  if (typeof c.status !== "string") return false;
+
+  if (!Array.isArray(c.shipping_items)) return false;
+  if (!c.receiver_address || typeof c.receiver_address !== "object") return false;
 
   return true;
 };
@@ -88,11 +134,6 @@ export const mapMLOrderToOrderDTO = (order: MercadoLibreOrder): OrderDTO => {
     id: order.id,
     status: order.status,
   };
-
-  if (order.shipping) {
-    dto.shippingId = order.shipping.id;
-    dto.shippingStatus = order.shipping.status;
-  }
-
+  if (order.shipping) dto.shippingId = order.shipping.id;
   return dto;
 };
