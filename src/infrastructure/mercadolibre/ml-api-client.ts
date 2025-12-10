@@ -1,5 +1,8 @@
 import { fetchAndParse } from "../http/fetch-and-parse.js";
-import { isMercadoLibreOrder } from "../../application/mercadolibre/types.js";
+import {
+  isMercadoLibreOrder,
+  isMercadoLibreShipment,
+} from "../../application/mercadolibre/types.js";
 
 interface CreateMLApiClientParams {
   getAccessToken: () => Promise<string>;
@@ -23,6 +26,22 @@ export const createMLApiClient = ({ getAccessToken }: CreateMLApiClientParams) =
       }
 
       return fetchAndParse(res, isMercadoLibreOrder, "Invalid MercadoLibre order response");
+    },
+
+    async getShipment(shipmentId: number) {
+      const token = await getAccessToken();
+
+      const res = await fetch(`${ML_API_BASE}/shipments/${shipmentId}`, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
+
+      if (!res.ok) {
+        throw new Error(`Failed to fetch shipment ${shipmentId}: ${await res.text()}`);
+      }
+
+      return fetchAndParse(res, isMercadoLibreShipment, "Invalid MercadoLibre shipment response");
     },
 
     async downloadShippingLabel(shippingId: number): Promise<Buffer> {
