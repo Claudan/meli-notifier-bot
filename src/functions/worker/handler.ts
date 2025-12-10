@@ -1,11 +1,7 @@
 import type { SQSHandler, SQSRecord } from "aws-lambda";
 import { createWorkerContext } from "./context.js";
 import type { GetEventIdParams, QueuePayload } from "../../application/types.js";
-import {
-  getOrderIdFromPayload,
-  isMercadoLibreOrder,
-  type MercadoLibreOrder,
-} from "../../application/mercadolibre/types.js";
+import { getOrderIdFromPayload } from "../../application/mercadolibre/types.js";
 
 const parseRecordBody = (record: SQSRecord): QueuePayload => {
   if (!record.body) return {};
@@ -37,12 +33,12 @@ export const handler: SQSHandler = async (event) => {
       const payload = parseRecordBody(record);
       const eventId = getEventId({ payload, record });
 
-      const saved = await ctx.eventsRepository.saveEventIfNotExists({
+      const eventSaved = await ctx.eventsRepository.saveEventIfNotExists({
         eventId,
         payload,
       });
 
-      if (!saved) {
+      if (!eventSaved) {
         console.log("Skipping duplicate event:", eventId);
         continue;
       }
@@ -53,33 +49,63 @@ export const handler: SQSHandler = async (event) => {
         continue;
       }
 
-      const rawOrder = await ctx.mlApiClient.getOrder(orderId);
+      const order = await ctx.mlApiClient.getOrder(orderId);
 
-      if (!isMercadoLibreOrder(rawOrder)) {
-        console.error("Invalid MercadoLibre order response", rawOrder);
+      if (!order.shipping?.id) {
+        console.log("Order without shipping:", order.id);
         continue;
       }
 
-      const order: MercadoLibreOrder = rawOrder;
+      const shipmentId = order.shipping.id;
+      const shipmentSaved = await ctx.eventsRepository.saveEventIfNotExists({
+        eventId: `shipment#${shipmentId}`,
+        payload: {
+          shipmentId,
+          buyer: order.buyer,
+        },
+      });
 
-      if (order.shipping?.status === "ready_to_ship") {
-        const pdf = await ctx.mlApiClient.downloadShippingLabel(order.shipping.id);
-
-        await ctx.telegram.sendDocument({
-          filename: `label-${orderId}.pdf`,
-          buffer: pdf,
-          caption: `Etiqueta lista para envío`,
-        });
+      if (!shipmentSaved) {
+        console.log("Shipment already processed:", shipmentId);
+        continue;
       }
 
-      await ctx.telegram.sendMessage(
-        [
-          `Nueva orden MercadoLibre`,
-          `Order: ${orderId}`,
-          "",
-          `\`\`\`${JSON.stringify(order, null, 2)}\`\`\``,
-        ].join("\n"),
-      );
+      const shipment = await ctx.mlApiClient.getShipment(shipmentId);
+
+      if (shipment.status !== "ready_to_ship") {
+        continue;
+      }
+
+      const buyerName =
+        order.buyer?.first_name || order.buyer?.last_name
+          ? `${order.buyer.first_name ?? ""} ${order.buyer.last_name ?? ""}`.trim()
+          : (order.buyer?.nickname ?? "Cliente");
+
+      const message = [
+        "Envío listo para despachar",
+        "",
+        `Cliente: ${buyerName}`,
+        shipment.receiver_address.receiver_name !== buyerName
+          ? `Recibe: ${shipment.receiver_address.receiver_name}`
+          : null,
+        "",
+        `Dirección: ${shipment.receiver_address.address_line}`,
+        `${shipment.receiver_address.city.name}, ${shipment.receiver_address.state.name}`,
+        "",
+        "Productos:",
+        ...shipment.shipping_items.map((item) => `• ${item.quantity}× ${item.description}`),
+      ]
+        .filter(Boolean)
+        .join("\n");
+
+      const pdf = await ctx.mlApiClient.downloadShippingLabel(shipmentId);
+
+      await ctx.telegram.sendMessage(message);
+      await ctx.telegram.sendDocument({
+        filename: `etiqueta-${shipmentId}.pdf`,
+        buffer: pdf,
+        caption: "Etiqueta de envío 📄",
+      });
     } catch (error) {
       console.error("Worker failed processing record:", error);
       throw error; // TO-DO: SQS retry DLQ
