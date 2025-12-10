@@ -1,0 +1,7 @@
+{
+  "extends": "./tsconfig.json",
+  "include": ["infra/**/*.ts", "src/**/*.ts", "shared/*.ts", "tests/**/*.ts"],
+  "compilerOptions": {
+    "types": ["node", "vitest"]
+  }
+}
