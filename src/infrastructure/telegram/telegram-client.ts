@@ -54,8 +54,8 @@ export const createTelegramClient = (secretArn: string) => {
 
     const res = await fetch(url, {
       method: "POST",
-      body: form as any,
-    });
+      body: form,
+    } satisfies RequestInit);
 
     if (!res.ok) {
       throw new Error(`Telegram sendDocument error: ${await res.text()}`);

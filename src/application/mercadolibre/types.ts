@@ -33,6 +33,13 @@ export interface MercadoLibreOrderWebhookPayload extends QueuePayload {
   actions: unknown[];
 }
 
+export interface OrderDTO {
+  id: number;
+  status: string;
+  shippingId?: number;
+  shippingStatus?: string;
+}
+
 export const isTokenExpired = (token: MercadoLibreToken): boolean => {
   return Date.now() >= token.expiresAt - 60_000;
 };
@@ -74,4 +81,18 @@ export const isMercadoLibreOrder = (value: unknown): value is MercadoLibreOrder 
   }
 
   return true;
+};
+
+export const mapMLOrderToOrderDTO = (order: MercadoLibreOrder): OrderDTO => {
+  const dto: OrderDTO = {
+    id: order.id,
+    status: order.status,
+  };
+
+  if (order.shipping) {
+    dto.shippingId = order.shipping.id;
+    dto.shippingStatus = order.shipping.status;
+  }
+
+  return dto;
 };

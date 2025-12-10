@@ -9,6 +9,9 @@ export default defineConfig([
     ignores: ["dist/**", "node_modules/**", "cdk.out/**", "eslint.config.mts"],
   },
   {
+    ignores: ["vitest.config.ts"],
+  },
+  {
     files: ["**/*.js"],
     extends: [js.configs.recommended],
     languageOptions: { globals: globals.node },
@@ -39,6 +42,25 @@ export default defineConfig([
     },
     plugins: {
       prettier: require("eslint-plugin-prettier"),
+    },
+  },
+  {
+    files: ["tests/**/*.ts"],
+    extends: [
+      js.configs.recommended,
+      ...tseslint.configs.recommended,
+      ...tseslint.configs.recommendedTypeChecked,
+      prettierConfig,
+    ],
+    languageOptions: {
+      parserOptions: {
+        project: "./tsconfig.vitest.json",
+        tsconfigRootDir: import.meta.dirname,
+      },
+      globals: {
+        ...globals.node,
+        ...globals.vitest,
+      },
     },
   },
 ]);
