@@ -26,12 +26,19 @@ const getEventId = ({ payload, record }: GetEventIdParams): string => {
 export const handler: SQSHandler = async (event) => {
   const ctx = await createWorkerContext();
 
-  console.log(`Worker received ${event.Records.length} records`);
+  console.log("Worker start", { records: event.Records.length });
 
   for (const record of event.Records) {
     try {
+      console.log("SQS record received", {
+        messageId: record.messageId,
+        body: record.body,
+      });
+
       const payload = parseRecordBody(record);
       const eventId = getEventId({ payload, record });
+
+      console.log("Parsed payload", { eventId });
 
       const eventSaved = await ctx.eventsRepository.saveEventIfNotExists({
         eventId,
@@ -39,24 +46,33 @@ export const handler: SQSHandler = async (event) => {
       });
 
       if (!eventSaved) {
-        console.log("Skipping duplicate event:", eventId);
+        console.log("Duplicate event skipped", { eventId });
         continue;
       }
 
       const orderId = getOrderIdFromPayload(payload);
       if (!orderId) {
-        console.warn("Order ID not found in payload:", payload);
+        console.log("Order ID not found in payload", { payload });
         continue;
       }
 
+      console.log("Fetching order", { orderId });
       const order = await ctx.mlApiClient.getOrder(orderId);
 
+      console.log("Order summary", {
+        id: order.id,
+        status: order.status,
+        shippingId: order.shipping?.id,
+        buyer: order.buyer,
+      });
+
       if (!order.shipping?.id) {
-        console.log("Order without shipping:", order.id);
+        console.log("Order has no shipping", { orderId });
         continue;
       }
 
       const shipmentId = order.shipping.id;
+
       const shipmentSaved = await ctx.eventsRepository.saveEventIfNotExists({
         eventId: `shipment#${shipmentId}`,
         payload: {
@@ -66,13 +82,25 @@ export const handler: SQSHandler = async (event) => {
       });
 
       if (!shipmentSaved) {
-        console.log("Shipment already processed:", shipmentId);
+        console.log("Shipment already processed", { shipmentId });
         continue;
       }
 
+      console.log("Fetching shipment", { shipmentId });
       const shipment = await ctx.mlApiClient.getShipment(shipmentId);
 
+      console.log("Shipment summary", {
+        id: shipment.id,
+        status: shipment.status,
+        itemsCount: shipment.shipping_items.length,
+        city: shipment.receiver_address.city.name,
+      });
+
       if (shipment.status !== "ready_to_ship") {
+        console.log("Shipment not ready to ship", {
+          shipmentId,
+          status: shipment.status,
+        });
         continue;
       }
 
@@ -98,16 +126,29 @@ export const handler: SQSHandler = async (event) => {
         .filter(Boolean)
         .join("\n");
 
-      const pdf = await ctx.mlApiClient.downloadShippingLabel(shipmentId);
+      console.log("Sending Telegram message", {
+        shipmentId,
+        lines: message.split("\n").length,
+      });
 
       await ctx.telegram.sendMessage(message);
+
+      const pdf = await ctx.mlApiClient.downloadShippingLabel(shipmentId);
+
+      console.log("Shipping label downloaded", {
+        shipmentId,
+        size: pdf.length,
+      });
+
       await ctx.telegram.sendDocument({
         filename: `etiqueta-${shipmentId}.pdf`,
         buffer: pdf,
         caption: "Etiqueta de envío 📄",
       });
+
+      console.log("Shipment processed successfully", { shipmentId });
     } catch (error) {
-      console.error("Worker failed processing record:", error);
+      console.log("Worker failed processing record:", error);
       throw error; // TO-DO: SQS retry DLQ
     }
   }
