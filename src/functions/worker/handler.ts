@@ -1,5 +1,6 @@
 import type { SQSHandler, SQSRecord } from "aws-lambda";
 import { createWorkerContext } from "./context.js";
+import { cropShippingLabel } from "../../application/mercadolibre/label/crop-shipping-label.js";
 import type { GetEventIdParams, QueuePayload } from "../../application/types.js";
 import { getOrderIdFromPayload } from "../../application/mercadolibre/types.js";
 
@@ -139,10 +140,11 @@ export const handler: SQSHandler = async (event) => {
         shipmentId,
         size: pdf.length,
       });
+      const cropped = await cropShippingLabel(pdf);
 
       await ctx.telegram.sendDocument({
         filename: `etiqueta-${shipmentId}.pdf`,
-        buffer: pdf,
+        buffer: cropped,
         caption: "Etiqueta de envío 📄",
       });
 
