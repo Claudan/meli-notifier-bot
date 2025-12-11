@@ -30,7 +30,7 @@ export interface MercadoLibreOrder {
       }>;
     };
   }>;
-  buyer?: {
+  buyer: {
     nickname?: string;
     first_name?: string;
     last_name?: string;
@@ -39,6 +39,7 @@ export interface MercadoLibreOrder {
 
 export interface MercadoLibreShipment {
   id: number;
+  logistic_type: string;
   status: string;
   shipping_items: Array<{
     quantity: number;
