@@ -30,7 +30,7 @@ export interface MercadoLibreOrder {
       }>;
     };
   }>;
-  buyer: {
+  buyer?: {
     nickname?: string;
     first_name?: string;
     last_name?: string;
@@ -122,6 +122,7 @@ export const isMercadoLibreShipment = (value: unknown): value is MercadoLibreShi
   const c = value as Record<string, unknown>;
 
   if (typeof c.id !== "number") return false;
+  if (typeof c.logistic_type !== "string") return false;
   if (typeof c.status !== "string") return false;
 
   if (!Array.isArray(c.shipping_items)) return false;
