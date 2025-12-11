@@ -1,6 +1,7 @@
 import type { SQSHandler, SQSRecord } from "aws-lambda";
 import { createWorkerContext } from "./context.js";
 import { cropShippingLabel } from "../../application/mercadolibre/label/crop-shipping-label.js";
+import { getShipmentMessage } from "../../application/mercadolibre/message/get-shipment-message.js";
 import type { GetEventIdParams, QueuePayload } from "../../application/types.js";
 import { getOrderIdFromPayload } from "../../application/mercadolibre/types.js";
 
@@ -105,27 +106,7 @@ export const handler: SQSHandler = async (event) => {
         continue;
       }
 
-      const buyerName =
-        order.buyer?.first_name || order.buyer?.last_name
-          ? `${order.buyer.first_name ?? ""} ${order.buyer.last_name ?? ""}`.trim()
-          : (order.buyer?.nickname ?? "Cliente");
-
-      const message = [
-        "Envío listo para despachar",
-        "",
-        `Cliente: ${buyerName}`,
-        shipment.receiver_address.receiver_name !== buyerName
-          ? `Recibe: ${shipment.receiver_address.receiver_name}`
-          : null,
-        "",
-        `Dirección: ${shipment.receiver_address.address_line}`,
-        `${shipment.receiver_address.city.name}, ${shipment.receiver_address.state.name}`,
-        "",
-        "Productos:",
-        ...shipment.shipping_items.map((item) => `• ${item.quantity}× ${item.description}`),
-      ]
-        .filter(Boolean)
-        .join("\n");
+      const message = getShipmentMessage({ order, shipment });
 
       console.log("Sending Telegram message", {
         shipmentId,

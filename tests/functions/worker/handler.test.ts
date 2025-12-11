@@ -55,6 +55,7 @@ describe("worker handler", () => {
 
   const baseShipment = {
     id: 555,
+    logistic_type: "xd_drop_off",
     status: "handling" as const,
     shipping_items: [{ quantity: 1, description: "Product" }],
     receiver_address: {

@@ -99,6 +99,7 @@ describe("isMercadoLibreShipment", () => {
     expect(
       isMercadoLibreShipment({
         id: 1,
+        logistic_type: "fulfillment",
         status: "ready_to_ship",
         shipping_items: [{ quantity: 1, description: "item" }],
         receiver_address: {
@@ -115,9 +116,39 @@ describe("isMercadoLibreShipment", () => {
     expect(
       isMercadoLibreShipment({
         id: "1",
+        logistic_type: "fulfillment",
         status: "ready_to_ship",
         shipping_items: [],
         receiver_address: {},
+      }),
+    ).toBe(false);
+
+    expect(
+      isMercadoLibreShipment({
+        id: 1,
+        status: "ready_to_ship",
+        shipping_items: [{ quantity: 1, description: "item" }],
+        receiver_address: {
+          address_line: "Street 123",
+          receiver_name: "John Doe",
+          city: { name: "City" },
+          state: { name: "State" },
+        },
+      }),
+    ).toBe(false);
+
+    expect(
+      isMercadoLibreShipment({
+        id: 1,
+        logistic_type: 123,
+        status: "ready_to_ship",
+        shipping_items: [{ quantity: 1, description: "item" }],
+        receiver_address: {
+          address_line: "Street 123",
+          receiver_name: "John Doe",
+          city: { name: "City" },
+          state: { name: "State" },
+        },
       }),
     ).toBe(false);
   });
