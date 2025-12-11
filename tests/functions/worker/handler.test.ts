@@ -8,6 +8,7 @@ const {
   getOrder,
   downloadShippingLabel,
   getShipment,
+  cropShippingLabel,
 } = vi.hoisted(() => ({
   saveEventIfNotExists: vi.fn(),
   sendMessage: vi.fn(),
@@ -15,6 +16,7 @@ const {
   getOrder: vi.fn(),
   downloadShippingLabel: vi.fn(),
   getShipment: vi.fn(),
+  cropShippingLabel: vi.fn(),
 }));
 
 vi.mock("../../../src/functions/worker/context.js", () => ({
@@ -23,6 +25,10 @@ vi.mock("../../../src/functions/worker/context.js", () => ({
     telegram: { sendMessage, sendDocument },
     mlApiClient: { getOrder, downloadShippingLabel, getShipment },
   }),
+}));
+
+vi.mock("../../../src/application/mercadolibre/label/crop-shipping-label.js", () => ({
+  cropShippingLabel,
 }));
 
 import { handler } from "../../../src/functions/worker/handler.js";
@@ -66,6 +72,7 @@ describe("worker handler", () => {
     getOrder.mockResolvedValue(baseOrder);
     getShipment.mockResolvedValue(baseShipment);
     downloadShippingLabel.mockResolvedValue(Buffer.from("pdf"));
+    cropShippingLabel.mockResolvedValue(Buffer.from("cropped"));
   });
 
   afterEach(() => {
@@ -142,5 +149,47 @@ describe("worker handler", () => {
     expect(getShipment).toHaveBeenCalledWith(555);
     expect(sendDocument).toHaveBeenCalled();
     expect(sendMessage).toHaveBeenCalled();
+  });
+
+  it("sends the cropped PDF buffer to Telegram", async () => {
+    const croppedBuffer = Buffer.from("cropped-pdf");
+    const originalPdf = Buffer.from("original-pdf");
+    downloadShippingLabel.mockResolvedValueOnce(originalPdf);
+    cropShippingLabel.mockResolvedValueOnce(croppedBuffer);
+
+    const event: SQSEvent = {
+      Records: [
+        {
+          messageId: "msg-3",
+          receiptHandle: "rh-3",
+          body: JSON.stringify(orderPayload),
+          attributes: {
+            ApproximateReceiveCount: "1",
+            SentTimestamp: "0",
+            SenderId: "local",
+            ApproximateFirstReceiveTimestamp: "0",
+          },
+          messageAttributes: {},
+          md5OfBody: "md5",
+          eventSource: "aws:sqs",
+          eventSourceARN: "arn:aws:sqs:local:queue",
+          awsRegion: "us-east-1",
+        },
+      ],
+    };
+
+    await handler(
+      event,
+      {} as Context,
+      vi.fn() as Callback<void | import("aws-lambda").SQSBatchResponse>,
+    );
+
+    expect(downloadShippingLabel).toHaveBeenCalledWith(555);
+    expect(cropShippingLabel).toHaveBeenCalledWith(originalPdf);
+    expect(sendDocument).toHaveBeenCalledWith({
+      buffer: croppedBuffer,
+      filename: "etiqueta-555.pdf",
+      caption: "Etiqueta de envío 📄",
+    });
   });
 });
