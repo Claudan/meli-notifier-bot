@@ -60,6 +60,7 @@
     "@aws-sdk/client-sqs": "^3.943.0",
     "@aws-sdk/lib-dynamodb": "^3.943.0",
     "aws-cdk-lib": "^2.231.0",
-    "constructs": "^10.4.3"
+    "constructs": "^10.4.3",
+    "pdf-lib": "^1.17.1"
   }
 }
