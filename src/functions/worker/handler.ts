@@ -96,7 +96,7 @@ export const handler: SQSHandler = async (event) => {
         city: shipment.receiver_address.city.name,
       });
 
-      if (shipment.status !== "ready_to_ship") {
+      if (!["handling", "ready_to_ship"].includes(shipment.status)) {
         console.log("Shipment not ready to ship", {
           shipmentId,
           status: shipment.status,
