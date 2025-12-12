@@ -66,8 +66,8 @@ export class MainStack extends cdk.Stack {
       runtime: lambda.Runtime.NODEJS_20_X,
       entry: path.join(process.cwd(), "src/functions/worker/handler.ts"),
       handler: "handler",
-      timeout: Duration.seconds(30),
-      memorySize: 512,
+      timeout: Duration.seconds(90),
+      memorySize: 1024,
       bundling: {
         minify: true,
         target: "es2022",
