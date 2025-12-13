@@ -10,8 +10,8 @@ const { send, SQSClient, SendMessageCommand } = vi.hoisted(() => {
     this.send = send;
   });
   const SendMessageCommand = vi.fn(function MockSendMessageCommand(
-    this: { input: { QueueUrl: string; MessageBody: string } },
-    input: { QueueUrl: string; MessageBody: string },
+    this: { input: { QueueUrl: string; MessageBody: string; DelaySeconds?: number } },
+    input: { QueueUrl: string; MessageBody: string; DelaySeconds?: number },
   ) {
     this.input = input;
   });
@@ -24,7 +24,7 @@ vi.mock("@aws-sdk/client-sqs", () => ({
   SendMessageCommand,
 }));
 
-type SendCommand = { input: { QueueUrl: string; MessageBody: string } };
+type SendCommand = { input: { QueueUrl: string; MessageBody: string; DelaySeconds?: number } };
 
 import { handler } from "../../../src/functions/producer/handler.js";
 
@@ -53,6 +53,7 @@ describe("producer handler", () => {
     expect(commandArg?.input).toEqual({
       QueueUrl: "https://sqs.local/queue",
       MessageBody: JSON.stringify(payload),
+      DelaySeconds: 240,
     });
   });
 });

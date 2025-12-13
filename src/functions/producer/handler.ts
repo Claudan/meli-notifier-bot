@@ -17,6 +17,7 @@ export const handler = async (event: APIGatewayProxyEvent): Promise<APIGatewayPr
       new SendMessageCommand({
         QueueUrl: QUEUE_URL,
         MessageBody: JSON.stringify(body),
+        DelaySeconds: 240,
       }),
     );
 
