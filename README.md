@@ -40,7 +40,7 @@ Con este MVP, el tiempo se reduce a **menos de 1 minuto**, lo que genera un ahor
 
 Nota: Los datos personales fueron anonimizados por razones de privacidad.
 
-<img src="docs/images/telegram-order-notification.jpg" width="200" />
+<img src="docs/images/telegram-order-notification.jpg" width="500" />
 
 ## Resultado de Impresión Térmica
 
