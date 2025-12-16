@@ -79,7 +79,7 @@ Etiqueta lista para imprimir directamente en impresora térmica, sin recortes ma
             mercadolibre/   # Integraciones ML: token, mensajes, label crop
         functions/          # Lambdas (producer y worker)
         infrastructure/     # Adaptadores a DynamoDB, HTTP, Telegram, ML API
-        tests/              # Pruebas unitarias
+    tests/                  # Pruebas unitarias
 ```
 
 ## Tecnologías
