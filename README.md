@@ -1,88 +1,89 @@
-## Meli Notifier Bot - Automatización de Envíos (MVP)
+## Meli Notifier Bot – Shipping Automation (MVP)
 
-Notificador de MercadoLibre basado en arquitectura **event-driven**, construido con **AWS CDK (Lambda, API Gateway, SQS, DynamoDB y Secrets Manager)**.
-Procesa webhooks y envía actualizaciones en tiempo real a Telegram.
-Desarrollado con **Node.js** y **TypeScript**.
+MercadoLibre notification bot based on an **event-driven architecture**, built with **AWS CDK (Lambda, API Gateway, SQS, DynamoDB y Secrets Manager)**.
+It processes webhooks and sends real-time updates to **Telegram**.
+Developed using **Node.js** and **TypeScript**.
 
-El objetivo es reducir drásticamente el tiempo de preparación de envíos, especialmente en flujos con alto volumen diario.
+The goal is to drastically reduce shipment preparation time, especially in workflows with a high daily volume.
 
-## Motivación del MVP
+## MVP Motivation
 
-En la operación diaria de un vendedor en MercadoLibre, imprimir y ajustar etiquetas consume tiempo repetitivo:
+In the daily operations of a MercadoLibre seller, printing and adjusting shipping labels consumes repetitive time:
 
-### Flujo original (2–3 minutos por pedido)
+### Original Flow (2–3 minutes per order)
 
-1. Abrir MercadoLibre (web o app).
+1. Open MercadoLibre (web or app).
 
-2. Ir a notificaciones o ventas.
+2. Go to notifications or sales.
 
-3. Abrir el pedido correspondiente.
+3. Open the corresponding order.
 
-4. Descargar la etiqueta PDF.
+4. Download the PDF shipping label.
 
-5. Recortar la etiqueta (esta etiqueta pdf utiliza cerca de un 30% de la página y deja mucho espacio en blanco que debemos recortar antes de enviar a la impresora térmica).
+5. Crop the label
+   (the PDF label uses only about 30% of the page, leaving a large amount of blank space that must be manually removed before sending it to the thermal printer).
 
 <img src="docs/images/meli-original-shipping-label.jpg" width="200" />
 
-6. Imprimir en app de impresora térmica.
+6. Print using the thermal printer app.
 
-### Flujo optimizado con este proyecto (< 1 minuto)
+### Optimized Flow with This Project (< 1 minute)
 
-1. Abrir la notificación del bot en Telegram.
+1. Open the bot notification in Telegram.
 
-2. Descargar la etiqueta ya recortada por el backend.
+2. Download the label already cropped by the backend.
 
-3. Imprimir directamente en la app de la impresora térmica.
+3. Print directly from the thermal printer app.
 
-Con este MVP, el tiempo se reduce a **menos de 1 minuto**, lo que genera un ahorro significativo en operaciones diarias (ej. **20 pedidos → +40 minutos/día de eficiencia**).
+With this MVP, the processing time is reduced to **under 1 minute**, resulting in significant daily operational savings (e.g. **20 orders → +40 minutes/day**).
 
-## Ejemplo de Notificación en Telegram
+## Telegram Notification Example
 
-Nota: Los datos personales fueron anonimizados por razones de privacidad.
+Note: Personal data has been anonymized for privacy reasons.
 
 <img src="docs/images/telegram-order-notification.jpg" width="500" />
 
-## Resultado de Impresión Térmica
+## Thermal Printing Result
 
-Etiqueta lista para imprimir directamente en impresora térmica, sin recortes manuales.
+Label ready to be printed directly on a thermal printer, with no manual cropping required.
 
 <img src="docs/images/shipping-label-anonymized.jpg" width="200" /> <img src="docs/images/telegram-meli-bot-print-result.jpg" width="200" />
 
-## Arquitectura
+## Architecture
 
-- **AWS API Gateway**: recibe webhook de MercadoLibre.
-- **AWS Lambda (Producer)**: valida y envía eventos a SQS.
-- **AWS SQS**: desacopla el procesamiento.
+- **AWS API Gateway**: Receives MercadoLibre webhooks.
+- **AWS Lambda (Producer)**: Validates requests and sends events to SQS.
+- **AWS SQS**: Decouples and buffers the processing flow.
 - **AWS Lambda (Worker)**:
-  - Obtiene órdenes y envíos desde la API de MercadoLibre.
-  - Envia notificaciones a Telegram.
-  - Descarga y recorta etiquetas PDF usando pdf-lib.
-- **DynamoDB**: deduplicación de eventos (idempotencia).
-- **Secrets Manager**: almacena tokens de la API de MercadoLibre.
+  - Fetches orders and shipments from the MercadoLibre API.
+  - Sends notifications to Telegram.
+  - Downloads and crops PDF labels using pdf-lib.
+- **DynamoDB**: Event deduplication (idempotency).
+- **Secrets Manager**: Stores MercadoLibre API tokens.
 
-## Features Principales
+## Key Features
 
-- Recepción de webhooks MercadoLibre.
-- Procesamiento idempotente de eventos.
-- Obtención de detalles de órdenes y envíos.
-- Detección inteligente del tipo de logística.
-- Mensajes enriquecidos para Telegram: Cliente, dirección, productos, tipo de logística.
-- Recorte automático de la etiqueta PDF para impresoras térmicas.
-- Envío de la etiqueta lista para imprimir.
+- MercadoLibre webhook reception.
+- Idempotent event processing.
+- Retrieval of order and shipment details.
+- Intelligent detection of the logistics type.
+- Enriched Telegram messages including: customer, address, products, and logistics type.
+- Automatic cropping of PDF labels for thermal printers.
+- Delivery of print-ready shipping labels.
 
-## Estructura del Proyecto
+## Project Structure
 
 ```bash
     infra/                  # CDK: (Lambda, SQS, DynamoDB, Secrets Manager)
     src/
-        application/        # Lógica de dominio y casos de uso
-            mercadolibre/   # Integraciones ML: token, mensajes, label crop
-        functions/          # Lambdas (producer y worker)
-        infrastructure/     # Adaptadores a DynamoDB, HTTP, Telegram, ML API
-    tests/                  # Pruebas unitarias
+        application/        # Domain logic and use cases
+            mercadolibre/   # MercadoLibre integrations: token, messages, label cropping
+        functions/          # Lambda functions (producer and worker)
+        infrastructure/     # Adapters for DynamoDB, HTTP, Telegram, MercadoLibre API
+    tests/                  # Unit tests
 ```
 
-## Tecnologías
+## Technologies
 
 - **Node.js + TypeScript**
 - **AWS Lambda**
@@ -94,19 +95,19 @@ Etiqueta lista para imprimir directamente en impresora térmica, sin recortes ma
 - **Telegram Bot API**
 - **MercadoLibre API**
 
-## Características técnicas
+## Technical Highlights
 
-- Arquitectura event-driven con AWS Lambda + SQS + API Gateway.
-- Persistencia idempotente con DynamoDB.
-- Secrets Manager para manejo seguro de credenciales.
-- ML API Client tipado y modular.
-- CI/CD con GitHub Actions ejecutando tests en cada push.
-- Suite de tests unitarios en TypeScript.
-- Envío de notificaciones a Telegram de manera desacoplada.
-- Crop automático de etiquetas PDF usando `pdf-lib`.
+- Event-driven architecture using AWS Lambda, SQS, and API Gateway.
+- Idempotent persistence with DynamoDB.
+- Secrets Manager for secure credential management.
+- Typed and modular MercadoLibre API client.
+- CI/CD with GitHub Actions running tests on every push.
+- Unit test suite written in TypeScript.
+- Decoupled delivery of Telegram notifications.
+- Automatic PDF label cropping using `pdf-lib`.
 
-## Autor
+## Author
 
-Claudio Andrade - Software Engineer
+Claudio Andrade - Full-Stack Software Engineer
 
 claudioandradecor@gmail.com
